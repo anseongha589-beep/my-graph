@@ -393,16 +393,138 @@ st.text_area(
 st.divider()
 
 
+
 # ==========================================
 # 그래프 3
 # ==========================================
 
-st.header("그래프 3")
+st.header("그래프 3 - 날짜별 10위권 일관객 합계")
 
-st.info("앞으로 추가할 그래프 공간입니다.")
+st.write(
+    "각 날짜의 10위권 영화 일관객을 모두 더해서 전체 관객 규모의 변화를 보여줍니다."
+)
+
+
+# 날짜별 10위권 일관객 합계 계산
+daily_top10 = (
+    df.groupby("날짜", as_index=False)["일관객"]
+    .sum()
+    .rename(columns={"일관객": "10위권 일관객 합계"})
+    .sort_values("날짜")
+)
+
+
+# 일관객 합계가 가장 컸던 날짜 3일
+top3_days = (
+    daily_top10
+    .nlargest(3, "10위권 일관객 합계")
+    .sort_values("날짜")
+    .copy()
+)
+
+
+# 영역 그래프
+area = alt.Chart(daily_top10).mark_area(
+    opacity=0.55
+).encode(
+    x=alt.X(
+        "날짜:T",
+        title="날짜",
+        axis=alt.Axis(
+            format="%b %Y",
+            labelAngle=0
+        )
+    ),
+    y=alt.Y(
+        "10위권 일관객 합계:Q",
+        title="10위권 일관객 합계",
+        axis=alt.Axis(format=",")
+    ),
+    tooltip=[
+        alt.Tooltip(
+            "날짜:T",
+            title="날짜",
+            format="%Y-%m-%d"
+        ),
+        alt.Tooltip(
+            "10위권 일관객 합계:Q",
+            title="관객수",
+            format=","
+        )
+    ]
+)
+
+
+line3 = alt.Chart(daily_top10).mark_line(
+    strokeWidth=2
+).encode(
+    x=alt.X("날짜:T"),
+    y=alt.Y("10위권 일관객 합계:Q")
+)
+
+
+# 가장 관객수가 많았던 3일의 점
+highlight_points = alt.Chart(top3_days).mark_point(
+    size=120,
+    filled=True
+).encode(
+    x=alt.X("날짜:T"),
+    y=alt.Y("10위권 일관객 합계:Q"),
+    tooltip=[
+        alt.Tooltip(
+            "날짜:T",
+            title="날짜",
+            format="%Y-%m-%d"
+        ),
+        alt.Tooltip(
+            "10위권 일관객 합계:Q",
+            title="관객수",
+            format=","
+        )
+    ]
+)
+
+
+# 가장 관객수가 많았던 3일의 날짜 표시
+highlight_text = alt.Chart(top3_days).mark_text(
+    dy=-18,
+    fontSize=13,
+    fontWeight="bold"
+).encode(
+    x=alt.X("날짜:T"),
+    y=alt.Y("10위권 일관객 합계:Q"),
+    text=alt.Text(
+        "날짜:T",
+        format="%Y-%m-%d"
+    )
+)
+
+
+chart3 = (
+    alt.layer(
+        area,
+        line3,
+        highlight_points,
+        highlight_text
+    )
+    .properties(height=500)
+    .interactive()
+)
+
+
+st.altair_chart(
+    chart3,
+    use_container_width=True
+)
+
+
+st.info(
+    "그래프 위에 표시된 날짜가 10위권 일관객 합계가 가장 컸던 상위 3일입니다."
+)
 
 
 st.subheader("이 그래프로 알 수 있는 것")
+
 
 st.text_area(
     "내용을 직접 작성하세요.",
