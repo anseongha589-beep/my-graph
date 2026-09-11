@@ -144,7 +144,7 @@ movie_list = sorted(
 )
 
 
-default_movie = "브랜드 뉴 데이"
+default_movie = "스파이더맨: 브랜드 뉴 데이"
 
 
 if default_movie in movie_list:
