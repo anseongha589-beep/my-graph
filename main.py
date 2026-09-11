@@ -155,7 +155,7 @@ movie_df = df[
 movie_df = movie_df.sort_values("날짜")
 
 
-hover = alt.selection_point(
+hover1 = alt.selection_point(
     on="pointerover",
     nearest=True,
     fields=["날짜"],
@@ -163,7 +163,7 @@ hover = alt.selection_point(
 )
 
 
-base = alt.Chart(movie_df).encode(
+base1 = alt.Chart(movie_df).encode(
     x=alt.X(
         "날짜:T",
         title="날짜",
@@ -175,21 +175,23 @@ base = alt.Chart(movie_df).encode(
     y=alt.Y(
         "일관객:Q",
         title="일관객",
-        axis=alt.Axis(format=",")
+        axis=alt.Axis(
+            format=","
+        )
     )
 )
 
 
-line = base.mark_line(
+line1 = base1.mark_line(
     point=True
 )
 
 
-points = base.mark_circle(
+points1 = base1.mark_circle(
     size=80
 ).encode(
     opacity=alt.condition(
-        hover,
+        hover1,
         alt.value(1),
         alt.value(0)
     ),
@@ -205,11 +207,11 @@ points = base.mark_circle(
             format=","
         )
     ]
-).add_params(hover)
+).add_params(hover1)
 
 
 chart1 = (
-    (line + points)
+    (line1 + points1)
     .properties(height=450)
     .interactive()
 )
@@ -228,7 +230,6 @@ st.info(
 
 st.subheader("이 그래프로 알 수 있는 것")
 
-
 st.text_area(
     "내용을 직접 작성하세요.",
     placeholder="여기에 직접 작성하세요.",
@@ -244,19 +245,27 @@ st.divider()
 # 그래프 2
 # ==========================================
 
-st.header("그래프 2 - 일관객 합계 TOP 5 영화")
+st.header("그래프 2 - 일관객 합계 TOP 5 영화 날짜별 비교")
 
 st.write(
-    "전체 기간 동안 일관객 합계가 가장 큰 5편의 날짜별 관객수를 비교합니다."
+    "전체 기간 동안 일관객 합계가 가장 큰 5편의 날짜별 일관객을 비교합니다."
 )
 
-top5_movies = (
+
+# 전체 기간의 일관객 합계가 큰 영화 5편 계산
+top5_summary = (
     df.groupby("영화명", as_index=False)["일관객"]
     .sum()
-    .sort_values("일관객", ascending=False)
-    .head(5)["영화명"]
-    .tolist()
+    .rename(columns={"일관객": "기간일관객합계"})
+    .sort_values(
+        "기간일관객합계",
+        ascending=False
+    )
+    .head(5)
 )
+
+
+top5_movies = top5_summary["영화명"].tolist()
 
 
 top5_df = df[
@@ -269,60 +278,92 @@ top5_df = top5_df.sort_values(
 )
 
 
-# 영화별 색상 구분과 범례 클릭 기능
+# 범례에서 영화를 클릭하기 위한 선택
 legend_selection = alt.selection_point(
     fields=["영화명"],
     bind="legend"
 )
 
 
-chart2 = (
-    alt.Chart(top5_df)
-    .mark_line(
-        point=True
+# 마우스를 가까운 날짜에 가져갔을 때 정보를 보여주기 위한 선택
+hover2 = alt.selection_point(
+    on="pointerover",
+    nearest=True,
+    fields=["날짜"],
+    empty=False
+)
+
+
+base2 = alt.Chart(top5_df).encode(
+    x=alt.X(
+        "날짜:T",
+        title="날짜",
+        axis=alt.Axis(
+            format="%b %Y",
+            labelAngle=0
+        )
+    ),
+    y=alt.Y(
+        "일관객:Q",
+        title="일관객",
+        axis=alt.Axis(
+            format=","
+        )
+    ),
+    color=alt.Color(
+        "영화명:N",
+        title="영화 목록 (클릭하여 토글)",
+        legend=alt.Legend(
+            orient="right",
+            direction="vertical"
+        )
+    ),
+    opacity=alt.condition(
+        legend_selection,
+        alt.value(1),
+        alt.value(0.08)
     )
-    .encode(
-        x=alt.X(
-            "날짜:T",
-            title="날짜",
-            axis=alt.Axis(
-                format="%m-%d",
-                labelAngle=-45
-            )
-        ),
-        y=alt.Y(
-            "일관객:Q",
-            title="일관객",
-            axis=alt.Axis(format=",")
-        ),
-        color=alt.Color(
+)
+
+
+line2 = base2.mark_line(
+    strokeWidth=2.5
+)
+
+
+points2 = base2.mark_circle(
+    size=65
+).encode(
+    opacity=alt.condition(
+        hover2,
+        alt.value(1),
+        alt.value(0)
+    ),
+    tooltip=[
+        alt.Tooltip(
             "영화명:N",
             title="영화"
         ),
-        opacity=alt.condition(
-            legend_selection,
-            alt.value(1),
-            alt.value(0.12)
+        alt.Tooltip(
+            "날짜:T",
+            title="날짜",
+            format="%Y-%m-%d"
         ),
-        tooltip=[
-            alt.Tooltip(
-                "영화명:N",
-                title="영화"
-            ),
-            alt.Tooltip(
-                "날짜:T",
-                title="날짜",
-                format="%Y-%m-%d"
-            ),
-            alt.Tooltip(
-                "일관객:Q",
-                title="관객수",
-                format=","
-            )
-        ]
-    )
+        alt.Tooltip(
+            "일관객:Q",
+            title="관객수",
+            format=","
+        )
+    ]
+).add_params(hover2)
+
+
+chart2 = (
+    (line2 + points2)
     .add_params(legend_selection)
-    .properties(height=500)
+    .properties(
+        height=500
+    )
     .interactive()
 )
 
@@ -334,13 +375,12 @@ st.altair_chart(
 
 
 st.info(
-    "범례에서 영화 이름을 클릭하면 해당 영화의 선을 켜거나 끌 수 있습니다. "
-    "그래프의 점에 마우스를 올리면 날짜와 관객수가 표시됩니다."
+    "오른쪽 범례의 영화 이름을 클릭하면 해당 영화의 선을 켜고 끌 수 있습니다. "
+    "그래프의 선 위에 마우스를 올리면 영화명, 날짜, 관객수가 표시됩니다."
 )
 
 
 st.subheader("이 그래프로 알 수 있는 것")
-
 
 st.text_area(
     "내용을 직접 작성하세요.",
@@ -363,7 +403,6 @@ st.info("앞으로 추가할 그래프 공간입니다.")
 
 
 st.subheader("이 그래프로 알 수 있는 것")
-
 
 st.text_area(
     "내용을 직접 작성하세요.",
