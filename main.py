@@ -550,12 +550,15 @@ st.write(
 )
 
 movie_summary = (
-    df.groupby("영화명")
-    .agg(
-        기간_일관객_합계=("일관객", "sum"),
-        10위권_등장_날수=("날짜", "nunique")
-    )
-    .reset_index()
+    df.groupby("영화명", as_index=False)
+    .agg({
+        "일관객": "sum",
+        "날짜": "nunique"
+    })
+    .rename(columns={
+        "일관객": "기간_일관객_합계",
+        "날짜": "10위권_등장_날수"
+    })
 )
 
 top10_summary = (
